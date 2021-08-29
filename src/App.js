@@ -1,23 +1,75 @@
-import logo from './logo.svg';
-import './App.css';
+import './App.scss';
+import Header from "./components/header";
+import {useDispatch, useSelector} from "react-redux";
+import React, {useEffect, useState} from "react";
+import {GetAllBooks} from "./actions/books-actions";
+import _ from 'lodash';
+import ListItem from "./components/item-list";
+import {projectImages} from "./assets/image";
+import Modal from "./components/modal";
 
 function App() {
+  const dispatch = useDispatch();
+  const booksState = useSelector(state => state.allBooks);
+  const [openModal, setOpenModal] = useState({
+    add: false,
+    edit: false,
+    delete: false
+  });
+  const [currentItem, setCurrentItem] = useState();
+
+  useEffect(() => {
+    dispatch(GetAllBooks())
+  }, [dispatch])
+
+  const showData = () => {
+    if (!_.isEmpty(booksState?.data)) {
+      return (
+        booksState?.data.map(item => {
+          return (
+            <ListItem
+              key={item.id}
+              idBook={item.id}
+              title={item.title}
+              author={item.author}
+              openModalFunc={openModalFunc}
+            />
+          )
+        })
+      )
+    }
+  }
+
+  const openModalFunc = (sign, data) => {
+    if (sign !== 'add') {
+      setCurrentItem(data)
+    }
+    setOpenModal(prevState => {
+      return {
+        ...prevState,
+        [sign]: !prevState[sign]
+      }
+    })
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{position: "relative"}}>
+      <Header />
+      <main className='main-container'>
+        <div className="add-book">
+          <span>Add book</span>
+          <button onClick={() => openModalFunc('add')}>
+            {projectImages.add}
+          </button>
+        </div>
+        {booksState?.loading ? <span>Loading...</span> : showData()}
+        {booksState?.errorMessage && <span>{booksState?.errorMessage}</span>}
+      </main>
+      <Modal
+        openModal={openModal}
+        currentItem={currentItem}
+        openModalFunc={openModalFunc}
+      />
     </div>
   );
 }
